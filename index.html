@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>目数計算ツール</title>
+</head>
+
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+
+    <div class="bg-white shadow-xl rounded-2xl p-6 w-full max-w-2xl space-y-6">
+
+        <h1 class="text-2xl font-bold text-gray-700">目数計算ツール</h1>
+
+        <!-- 入力 -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <label class="flex flex-col text-sm text-gray-600">
+                大きい目数
+                <input type="number" id="num1"
+                       class="mt-1 border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-400 outline-none">
+            </label>
+
+            <label class="flex flex-col text-sm text-gray-600">
+                小さい目数
+                <input type="number" id="num2"
+                       class="mt-1 border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-400 outline-none">
+            </label>
+        </div>
+
+        <!-- ボタン -->
+        <button onclick="calc()" type="button"
+                class="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition">
+            決定！
+        </button>
+
+        <!-- 結果 -->
+        <div class="bg-gray-50 rounded-lg p-4 text-sm text-gray-700 whitespace-pre-line" id="result"></div>
+
+        <!-- 説明 -->
+        <div class="text-sm text-gray-600 whitespace-pre-line" id="explain"></div>
+
+        <!-- テーブル -->
+        <div class="overflow-x-auto">
+            <table class="table-auto border-collapse w-full text-center text-sm">
+                <thead>
+                    <tr id="row1" class="bg-gray-200"></tr>
+                </thead>
+                <tbody>
+                    <tr id="row2"></tr>
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+    <script>
+        function calc() {
+        const n1 = Number(document.getElementById("num1").value);
+        const n2 = Number(document.getElementById("num2").value);
+
+        if (n1 <= n2) {
+        alert('大きい目数を大きい目数にしてください。');
+        return;
+        }
+
+        let diff = n1 - n2;
+        let skipTimes = Math.floor((n1 + 1) / (diff + 1));
+
+        let x = (skipTimes + 1) * (diff + 1) - (n1 + 1) - 1;
+        let y = diff - x;
+
+        let width = Math.max(String(skipTimes).length, String(skipTimes + 1).length);
+        let stStr1 = String(skipTimes).padStart(width, " ");
+        let stStr2 = String(skipTimes + 1).padStart(width, " ");
+
+        let ptn1 = "〇".repeat(skipTimes - 1) + "●";
+        let ptn2 = "〇".repeat(skipTimes) + "●";
+        let ptn3 = "〇".repeat(skipTimes - 1);
+
+        document.getElementById("result").textContent =
+        "結果は\n" +
+        "　" + stStr1 + "目ごと（" + ptn1 + "）　：" + x + "回\n" +
+        "　" + stStr2 + "目ごと（" + ptn2 + "）：" + y + "回　だよ！\n" +
+        "　そして最後に（" + ptn3 + "）をやったら完成！";
+
+        document.getElementById("explain").textContent =
+        "ここからは（" + ptn1 + "）を「◇」、（" + ptn2 + "）を「｜」で表すよ。";
+
+        let ptnA = [];
+        let startIdx = Math.floor(x / 2) - Math.ceil(y / 2);
+        if (x % 2 === 1 && y % 2 === 1) startIdx++;
+
+        for (let i = 0; i < x; i++) {
+        ptnA.push('◇');
+        if (startIdx <= i && i < startIdx + y) {
+        ptnA.push('｜');
+        }
+        }
+
+        const row1 = document.getElementById("row1");
+        const row2 = document.getElementById("row2");
+
+        row1.innerHTML = "";
+        row2.innerHTML = "";
+
+        for (let i = 0; i < diff; i++) {
+        const th = document.createElement("th");
+        th.textContent = ptnA[i];
+        th.className = "border px-2 py-1";
+        row1.appendChild(th);
+
+        const td = document.createElement("td");
+        td.className = "border px-2 py-2";
+
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.className = "w-5 h-5 accent-blue-500";
+
+        td.appendChild(checkbox);
+        row2.appendChild(td);
+        }
+        }
+    </script>
+
+</body>
+</html>
