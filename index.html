@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
     <meta charset="UTF-8">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -17,19 +18,19 @@
             <label class="flex flex-col text-sm text-gray-600">
                 大きい目数
                 <input type="number" id="num1"
-                       class="mt-1 border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-400 outline-none">
+                    class="mt-1 border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-400 outline-none">
             </label>
 
             <label class="flex flex-col text-sm text-gray-600">
                 小さい目数
                 <input type="number" id="num2"
-                       class="mt-1 border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-400 outline-none">
+                    class="mt-1 border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-400 outline-none">
             </label>
         </div>
 
         <!-- ボタン -->
         <button onclick="calc()" type="button"
-                class="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition">
+            class="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition">
             決定！
         </button>
 
@@ -55,75 +56,175 @@
 
     <script>
         function calc() {
-        const n1 = Number(document.getElementById("num1").value);
-        const n2 = Number(document.getElementById("num2").value);
+            const x = Number(document.getElementById("num1").value);
+            const y = Number(document.getElementById("num2").value);
 
-        if (n1 <= n2) {
-        alert('大きい目数を大きい目数にしてください。');
-        return;
+            if (x <= y) {
+                alert('「大きい目数＞小さい目数」で入力してね。');
+                return;
+            }
+            if (y <= x / 2) {
+                alert('目数を半分以下にするのは対応してないよ。\nごめんね＞＜');
+                return;
+            }
+
+            const poss = calcDecPos(x, y);
+            const intervals = calcIntervals(poss);
+            let [ptn1, ptn2, cnt1, cnt2] = calcDecPtn(intervals);
+
+            //必ずptn1のほうが短いパターンにする。
+            if (ptn1 > ptn2) {
+                [ptn1, ptn2] = [ptn2, ptn1];
+                [cnt1, cnt2] = [cnt2, cnt1];
+            }
+
+            const lastCnt = x - ((ptn1 * cnt1) + (ptn2 * cnt2));
+
+            const ptn1Str = createPtnStr(ptn1, cnt1);
+            const ptn2Str = createPtnStr(ptn2, cnt2);
+            const lastStr = "〇".repeat(lastCnt);
+
+            document.getElementById("result").textContent =
+                "結果は\n" +
+                createPtnDescStr(ptn1, cnt1, ptn1Str, 1) +
+                createPtnDescStr(ptn2, cnt2, ptn2Str, 2) +
+                "　最後に" + lastCnt + "目（" + lastStr + "）をやったら完成！";
+
+            document.getElementById("explain").textContent =
+                "ここからは\n" +
+                createAfterPtnStr(cnt1, ptn1Str, "｜", 1) +
+                createAfterPtnStr(cnt2, ptn2Str, "◇", 2) +
+                "で表すよ。";
+
+            let decPtn = []
+
+            for (const interval of intervals) {
+                decPtn.push(interval == ptn1 ? '◇' : '｜');
+            }
+
+            const row1 = document.getElementById("row1");
+            const row2 = document.getElementById("row2");
+
+            row1.innerHTML = "";
+            row2.innerHTML = "";
+
+            for (let i = 0; i < cnt1 + cnt2; i++) { //cnt1 + cnt2 と x -y は同値
+                const th = document.createElement("th");
+                th.textContent = decPtn[i];
+                th.className = "border px-2 py-1";
+                row1.appendChild(th);
+
+                const td = document.createElement("td");
+                td.className = "border px-2 py-2";
+
+                const checkbox = document.createElement("input");
+                checkbox.type = "checkbox";
+                checkbox.className = "w-5 h-5 accent-blue-500";
+
+                td.appendChild(checkbox);
+                row2.appendChild(td);
+            }
         }
 
-        let diff = n1 - n2;
-        let skipTimes = Math.floor((n1 + 1) / (diff + 1));
+        /**
+         * x目からy目に減目する際の減目位置を計算する
+         *
+         * 例:
+         * 100目 → 80目
+         * 戻り値: [5, 10, 14, 19, ...]
+         */
+        function calcDecPos(x, y) {
+            //減らし目をする回数
+            const decCnt = x - y;
+            const poss = [];
 
-        //パターン1実施回数
-        let x = (skipTimes + 1) * (diff + 1) - (n1 + 1) - 1;
+            for (let i = 1; i <= decCnt; i++) {
+                const pos = Math.round(
+                    i * (x + 1) / (decCnt + 1)
+                );
 
-        //パターン2実施回数
-        let y = diff - x;
+                poss.push(pos);
+            }
 
-        let width = Math.max(String(skipTimes).length, String(skipTimes + 1).length);
-        let stStr1 = String(skipTimes).padStart(width, " ");
-        let stStr2 = String(skipTimes + 1).padStart(width, " ");
-
-        let ptn1 = "〇".repeat(skipTimes - 1) + "●";
-        let ptn2 = "〇".repeat(skipTimes) + "●";
-        let ptn3 = "〇".repeat(skipTimes - 1);
-
-        document.getElementById("result").textContent =
-        "結果は\n" +
-        "　" + stStr1 + "目ごと（" + ptn1 + "）　：" + x + "回\n" +
-        "　" + stStr2 + "目ごと（" + ptn2 + "）：" + y + "回　だよ！\n" +
-        "　そして最後に（" + ptn3 + "）をやったら完成！";
-
-        document.getElementById("explain").textContent =
-        "ここからは（" + ptn1 + "）を「◇」、（" + ptn2 + "）を「｜」で表すよ。";
-
-        let ptnA = [];
-        let startIdx = Math.floor(x / 2) - Math.ceil(y / 2);
-        if (x % 2 === 1 && y % 2 === 1) startIdx++;
-
-        for (let i = 0; i < x; i++) {
-        ptnA.push('◇');
-        if (startIdx <= i && i < startIdx + y) {
-        ptnA.push('｜');
-        }
+            return poss;
         }
 
-        const row1 = document.getElementById("row1");
-        const row2 = document.getElementById("row2");
+        /**
+        * 減らし目同士の間隔を算出する。
+        */
+        function calcIntervals(poss) {
+            const intervals = [];
 
-        row1.innerHTML = "";
-        row2.innerHTML = "";
+            let prev = 0;
 
-        for (let i = 0; i < diff; i++) {
-        const th = document.createElement("th");
-        th.textContent = ptnA[i];
-        th.className = "border px-2 py-1";
-        row1.appendChild(th);
+            for (const pos of poss) {
+                intervals.push(pos - prev);
+                prev = pos;
+            }
 
-        const td = document.createElement("td");
-        td.className = "border px-2 py-2";
-
-        const checkbox = document.createElement("input");
-        checkbox.type = "checkbox";
-        checkbox.className = "w-5 h-5 accent-blue-500";
-
-        td.appendChild(checkbox);
-        row2.appendChild(td);
+            return intervals;
         }
+
+        /**
+         * 減らし目パターンの回数をカウントする。
+         * 
+         * 例：
+         * 10目 → 7目　（○○●○○●○●○○）
+         * 「３」目ごとを「２」回
+         * 「２」目ごとを「１」回
+        */
+        function calcDecPtn(intervals) {
+            let ptn1 = 0;
+            let ptn2 = 0;
+            let cnt1 = 0;
+            let cnt2 = 0;
+
+            for (const interval of intervals) {
+                if (interval == ptn1) {
+                    cnt1++;
+                }
+                else if (interval == ptn2) {
+                    cnt2++;
+                }
+                else if (ptn1 == 0) {
+                    ptn1 = interval;
+                    cnt1++;
+                }
+                else if (ptn2 == 0) {
+                    ptn2 = interval;
+                    cnt2++;
+                }
+            }
+            return [ptn1, ptn2, cnt1, cnt2];
+        }
+
+        /**
+         * 減らし目パターン文字列作成
+         * cntが0の場合は空文字列（ptn2がない場合を想定)
+        */
+        function createPtnStr(ptn, cnt) {
+            return cnt == 0 ? "" : "〇".repeat(ptn - 1) + "●";
+        }
+
+        /**
+         * 減らし目パターン説明文作成
+         * cntが0の場合は空文字列（ptn2がない場合を想定)
+        */
+        function createPtnDescStr(ptn, cnt, ptnStr, ptnNum) {
+            const space = "　".repeat(3 - ptnNum);
+            return cnt == 0 ? "" : "　" + ptn + "目を" + (ptn - 1) + "目にする。（" + ptnStr + "）" + space + "：" + cnt + "回\n"
+        }
+
+        /**
+         * 後半のパターン説明文作成
+         * cntが0の場合は空文字列（ptn2がない場合を想定)
+        */
+        function createAfterPtnStr(cnt, beforeStr, afterStr, ptnNum) {
+            const space = "　".repeat(2 - ptnNum);
+            return cnt == 0 ? "" : "　（" + beforeStr + "）" + space + "を「" + afterStr + "」\n"
         }
     </script>
 
 </body>
+
 </html>
